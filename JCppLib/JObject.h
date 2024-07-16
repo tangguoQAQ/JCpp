@@ -11,6 +11,10 @@ namespace Java
 	 */
 	class JObject
 	{
+	private:
+		char szClassName[MAX_CLASSPATH_LEN];
+		::jclass selfClass = nullptr;
+
 	protected:
 		::jobject self = nullptr;
 
@@ -18,18 +22,22 @@ namespace Java
 		/**
 		 * @param pObject 构造完成后将被释放，请使用 Ptr() 方法获取其指针。
 		 */
-		JObject(::jobject pObject);
+		JObject(::jobject pObject) noexcept(false);
 
-		~JObject();
+		~JObject() noexcept;
 
-		friend bool operator==(const JObject& l, const JObject& r) noexcept;
-		friend bool operator!=(const JObject& l, const JObject& r) noexcept;
+		bool operator==(const JObject& another) const noexcept;
+		bool operator!=(const JObject& another) const noexcept;
 
-		friend std::ostream& operator<<(std::ostream& os, const JObject& obj);
+		JObject operator=(const JObject& another) = delete;
+
+		friend std::ostream& operator<<(std::ostream& os, const JObject& jo);
 
 		::jobject Ptr() const noexcept;
 
 		JClass Class() const noexcept(false);
+
+		ConstString ClassName() const noexcept;
 
 		/**
 		* @brief 调用对象的方法。
@@ -44,10 +52,6 @@ namespace Java
 		R Do(ConstString methodName, ConstString signature, ...) const noexcept(false);
 	};
 
-	bool operator==(const JObject& l, const JObject& r) noexcept;
-	bool operator!=(const JObject& l, const JObject& r) noexcept;
-
-	std::ostream& operator<<(std::ostream& os, const JObject& obj);
 
 	class JString : public JObject
 	{
@@ -58,9 +62,13 @@ namespace Java
 
 		JString(ConstString str) noexcept(false);
 
-		void Get(ConstString destination, size_t maxLen) const noexcept(false);
-
 		operator std::string() const noexcept(false);
+
+		void Get(char* destination, size_t maxLen) const noexcept(false);
+
+		std::string Get() const noexcept(false);
 	};
+
+	std::ostream& operator<<(std::ostream& os, const JObject& jo);
 }
 

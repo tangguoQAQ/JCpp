@@ -13,7 +13,7 @@ namespace Java {
 	 * @brief 请在主线程中调用此函数。不要忘记在最后调用 Java::Destroy()。
 	 * @throws Java::Exception::JniException
 	 */
-	void Initialize(ConstString costumClasspath)
+	void Initialize(ConstString costumClasspath) noexcept(false)
 	{
 		JavaVMInitArgs vm_args;
 		constexpr int nOption = 2;
@@ -30,6 +30,11 @@ namespace Java {
 		const jint rc = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
 		delete options;
 		Util::ThrowIf(rc != JNI_OK, Exception::JniException("Failed to create Java VM"));
+	}
+
+	void Destroy() noexcept
+	{
+		if(jvm != nullptr) jvm->DestroyJavaVM();
 	}
 
 	namespace Exception
@@ -140,10 +145,5 @@ namespace Java {
 
 		classCache.insert({ className, std::shared_ptr<::jclass>(new jclass(pGlobalClass)) });
 		return &classCache[className];
-	}
-
-	void Destroy()
-	{
-		if(jvm != nullptr) jvm->DestroyJavaVM();
 	}
 }

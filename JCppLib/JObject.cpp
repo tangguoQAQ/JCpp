@@ -1,11 +1,13 @@
 #include "JObject.h"
+#include "Util.h"
+#include <iostream>
 
 namespace Java
 {
 	/**
 	 * @param pObject 构造完成后将被释放，请使用 Ptr() 方法获取其指针。
 	 */
-	JObject::JObject(::jobject pObject)
+	JObject::JObject(::jobject pObject) noexcept(false)
 	{
 		Exception::ThrowIf(pObject == nullptr, { Exception::Jni, "pObject is null"});
 
@@ -13,52 +15,58 @@ namespace Java
 		env->DeleteLocalRef(pObject);
 		ThrowIfChecked(Exception::Jni);
 		self = pGlobalObject;
+
+		const auto pClass = env->GetObjectClass(self);
+		selfClass = static_cast<::jclass>(env->NewGlobalRef(pClass));
+		env->DeleteLocalRef(pClass);
+		ThrowIfChecked(Exception::Jni);
+
+		::jobject pjoSelfClass = env->CallObjectMethod(self,
+			env->GetMethodID(selfClass, "getClass", "()Ljava/lang/Class;"));
+		::jclass pjcClass = env->GetObjectClass(pjoSelfClass);
+		::jstring jsClassName = static_cast<::jstring>(env->CallObjectMethod(pjoSelfClass,
+			env->GetMethodID(pjcClass, "getName", "()Ljava/lang/String;")));
+		env->GetStringUTFRegion(jsClassName, 0, env->GetStringLength(jsClassName), szClassName);
+		env->DeleteLocalRef(pjoSelfClass);
+		env->DeleteLocalRef(pjcClass);
+		env->DeleteLocalRef(jsClassName);
+		Exception::ThrowIfChecked(Exception::Jni);
 	}
 
-	JObject::~JObject()
+	JObject::~JObject() noexcept
 	{
 		if(self != nullptr) env->DeleteGlobalRef(self);
 	}
 
-	bool operator==(const JObject& l, const JObject& r) noexcept
+	bool JObject::operator==(const JObject& another) const noexcept
 	{
-		return env->IsSameObject(l.self, r.self);
+		return env->IsSameObject(self, another.self);
 	}
 
-	bool operator!=(const JObject& l, const JObject& r) noexcept
+	bool JObject::operator!=(const JObject& another) const noexcept
 	{
-		return !(l == r);
+		return !(*this == another);
 	}
 
-	std::ostream& operator<<(std::ostream& os, const JObject& obj)
+	std::ostream& operator<<(std::ostream& os, const JObject& jo)
 	{
-		os << "JObject@" << obj.Class() << ";" << obj.Do<::jstring>("toString", "()Ljava/lang/String;")wd;
-		return os;
-	}
-
-	JClass JObject::Class() const noexcept(false)
-	{
-		::jclass pClass = env->GetObjectClass(self);
-		::jobject pjoSelfClass = env->CallObjectMethod(self,
-			env->GetMethodID(pClass, "getClass", "()Ljava/lang/Class;"));
-		::jclass pjcClass = env->GetObjectClass(pjoSelfClass);
-		::jstring jsClassName = static_cast<::jstring>(env->CallObjectMethod(pjoSelfClass,
-			env->GetMethodID(pjcClass, "getName", "()Ljava/lang/String;")));
-		char szClassName[MAX_CLASSPATH_LEN];
-		auto len = env->GetStringLength(jsClassName);
-		env->GetStringUTFRegion(jsClassName, 0, len, szClassName);
-
-		env->DeleteLocalRef(pClass);
-		env->DeleteLocalRef(pjoSelfClass);
-		env->DeleteLocalRef(pjcClass);
-		env->DeleteLocalRef(jsClassName);
-
-		return JClass(szClassName);
+		return os << std::string("JObject@") + jo.szClassName + ";"
+			+ jo.Do<JString>("toString", "()Ljava/lang/String;").Get() + ";";
 	}
 
 	::jobject JObject::Ptr() const noexcept
 	{
 		return self;
+	}
+
+	JClass JObject::Class() const noexcept(false)
+	{
+		return JClass(szClassName);
+	}
+
+	ConstString JObject::ClassName() const noexcept
+	{
+		return szClassName;
 	}
 
 	/**
@@ -75,7 +83,7 @@ namespace Java
 	{
 		using namespace Java::Exception;
 
-		const auto methodID = env->GetMethodID(Class().Ptr(), methodName, signature);
+		const auto methodID = env->GetMethodID(selfClass, methodName, signature);
 		ThrowIf(methodID == nullptr, JniException(MethodNotFound, (std::string(methodName) + signature).c_str()));
 
 		va_list vaList;
@@ -87,12 +95,12 @@ namespace Java
 			ThrowIfChecked(Exception::CallMethodFailed);
 			return;
 		}
-		else if constexpr(std::is_same_v<R, JObject>)
+		else if constexpr(std::is_same_v<R, JObject> || std::is_base_of_v<JObject, R>)
 		{
 			::jobject result = env->CallObjectMethodV(self, methodID, vaList);
 			va_end(vaList);
 			ThrowIfChecked(Exception::CallMethodFailed);
-			return JObject(result);
+			return R(result);
 		}
 		else
 		{
@@ -121,9 +129,6 @@ namespace Java
 			else if constexpr(std::is_same_v<R, ::jdouble>)
 				result = env->CallDoubleMethodV(self, methodID, vaList);
 
-			else if constexpr(std::is_same_v<R, ::jstring>)
-				result = static_cast<::jstring>(env->CallObjectMethodV(self, methodID, vaList));
-
 			else
 				Util::ThrowIf(true, "Unsupported template argument R type.")
 
@@ -143,10 +148,35 @@ namespace Java
 	template ::jfloat JObject::Do(ConstString, ConstString, ...) const;
 	template ::jdouble JObject::Do(ConstString, ConstString, ...) const;
 	template JObject JObject::Do(ConstString, ConstString, ...) const;
-	template ::jstring JObject::Do(ConstString, ConstString, ...) const;
 	
+
 	JString::JString() noexcept(false) : JObject(env->NewStringUTF("")) {}
 
 	JString::JString(ConstString str) noexcept(false) : JObject(env->NewStringUTF(str)) {}
 
+	JString::operator std::string() const noexcept(false)
+	{
+		return Get();
+	}
+
+	void JString::Get(char* destination, size_t maxLen) const noexcept(false)
+	{
+		Util::ThrowIf(destination == nullptr, "destination is null");
+
+		auto len = env->GetStringUTFLength(static_cast<::jstring>(self));
+		if(len > maxLen) len = static_cast<::jsize>(maxLen);
+		env->GetStringUTFRegion(static_cast<::jstring>(self), 0, len, destination);
+
+		Exception::ThrowIfChecked(Exception::StringException);
+	}
+
+	std::string JString::Get() const noexcept(false)
+	{
+		const char* szStr = env->GetStringUTFChars(static_cast<::jstring>(self), nullptr);
+		Exception::ThrowIf(szStr == nullptr, { Exception::StringException , "GetStringUTFChars failed"});
+
+		std::string str(szStr);
+		env->ReleaseStringUTFChars(static_cast<::jstring>(self), szStr);
+		return str;
+	}
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+constexpr size_t MAX_CLASSPATH_LEN = 256;
+
 #include <jni.h>
 #include "UsingAlias.h"
 #include "JClass.h"
@@ -15,13 +17,13 @@ namespace Java {
 	 */
 	extern JNIEnv* env;
 
-	constexpr size_t MAX_CLASSPATH_LEN = 256;
-
 	/**
 	 * @brief 请在主线程中调用此函数。不要忘记在最后调用 Java::Destroy()。
 	 * @throws Java::Exception::JniException
 	 */
-	void Initialize(ConstString costumClasspath = ".");
+	void Initialize(ConstString costumClasspath = ".") noexcept(false);
+
+	void Destroy() noexcept;
 
 	namespace Exception
 	{
@@ -30,7 +32,8 @@ namespace Java {
 			ClassNotFound,
 			MethodNotFound,
 			CallMethodFailed,
-			NewObjectFailed
+			NewObjectFailed,
+			StringException
 		);
 
 		class JniException : public std::exception
@@ -69,7 +72,5 @@ namespace Java {
 	 * @throws Java::Exception::JniException
 	 */
 	const std::shared_ptr<::jclass>* GetClassAndCache(ConstString className) noexcept(false);
-
-	void Destroy();
 
 }

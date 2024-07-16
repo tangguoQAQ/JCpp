@@ -7,6 +7,7 @@
 #include <memory>
 #include <algorithm>
 #include <type_traits>
+#include <iostream>
 
 namespace Java
 {
@@ -16,26 +17,25 @@ namespace Java
 	 */
 	JClass::JClass(ConstString className) noexcept(false) : name(className), self(*GetClassAndCache(className)) {}
 
-	JClass::~JClass() noexcept(false)
+	JClass::~JClass() noexcept
 	{
 		self.reset();
 		GetClassAndCache((name + "?").c_str());
 	}
 
-	bool operator==(const JClass& l, const JClass& r) noexcept
+	bool JClass::operator==(const JClass& another) const noexcept
 	{
-		return *l.self == *r.self;
+		return *self == *another.self;
 	}
 
-	bool operator!=(const JClass& l, const JClass& r) noexcept
+	bool JClass::operator!=(const JClass& another) const noexcept
 	{
-		return !(l == r);
+		return !(*this == another);
 	}
 
-	std::ostream& operator<<(std::ostream& os, const JClass& jc)
+	std::ostream& Java::operator<<(std::ostream& os, const JClass& jc)
 	{
-		os << "JClass@" << jc.name << ";";
-		return os;
+		return os << std::string("JClass@") + jc.name + ";";
 	}
 
 	::jclass JClass::Ptr() const noexcept

@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include "catch2/catch_amalgamated.hpp"
 #include <Java.h>
 
 TEST_CASE("JClass", "[jcalss]")
@@ -74,11 +74,13 @@ TEST_CASE("JClass 静态方法", "[jclass]")
 		auto szJavaHome = Java::env->GetStringUTFChars(jsJavaHome, nullptr);
 		INFO(R"(System.getenv("JAVA_HOME"): )" << szJavaHome);
 
-		auto szJavaHomeInCpp = ::getenv("JAVA_HOME");
-		INFO(R"(::getenv("JAVA_HOME"): )" << szJavaHomeInCpp);
-
+		char* szJavaHomeInCpp;
+		errno_t err = ::_dupenv_s(&szJavaHomeInCpp, nullptr, "JAVA_HOME");
+		
+		INFO(R"(::_dupenv_s(&szJavaHomeInCpp, nullptr, "JAVA_HOME"): )" << szJavaHomeInCpp);
 		REQUIRE(::strncmp(szJavaHome, szJavaHomeInCpp, 512) == 0);
 
+		if(!err) free(szJavaHomeInCpp);
 		Java::env->ReleaseStringUTFChars(jsJavaHome, szJavaHome);
 		Java::env->DeleteLocalRef(jsJavaHome);
 		Java::env->DeleteLocalRef(jsAgr);
@@ -116,6 +118,7 @@ TEST_CASE("JClass JObject 方法", "[jclass][jobject]")
 	REQUIRE(joProperties.Ptr() != nullptr);
 
 	int hashCode = joProperties.Do<::jint>("hashCode", "()I");
-	INFO("System.getProperties.hashCode(): " << hashCode);
+	INFO(joProperties);
+	INFO("Properties.hashCode(): " << hashCode);
 	REQUIRE(hashCode != 0);
 }

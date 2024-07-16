@@ -23,12 +23,12 @@ namespace Java
 		 * @param className 完整的类路径, 如 "java.lang.String"
 		 * @throws Java::Exception::JniException
 		 */
-		JClass(ConstString className) noexcept(false);
+		explicit JClass(ConstString className) noexcept(false);
 
-		~JClass() noexcept(false);
+		~JClass() noexcept;
 
-		friend bool operator==(const JClass& l, const JClass& r) noexcept;
-		friend bool operator!=(const JClass& l, const JClass& r) noexcept;
+		bool operator==(const JClass& another) const noexcept;
+		bool operator!=(const JClass& another) const noexcept;
 
 		friend std::ostream& operator<<(std::ostream& os, const JClass& jc);
 
@@ -54,9 +54,6 @@ namespace Java
 		 */
 		JObject New(ConstString constructorSignature, ...) const noexcept(false);
 	};
-
-	bool operator==(const JClass& l, const JClass& r) noexcept;
-	bool operator!=(const JClass& l, const JClass& r) noexcept;
 
 	std::ostream& operator<<(std::ostream& os, const JClass& jc);
 }
