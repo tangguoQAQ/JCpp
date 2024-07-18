@@ -101,4 +101,5 @@ ENUM_NAMES_OF_EType.GetStr(static_cast<int>(m_t));
 #define ENUM_DEFINE(type, ...) enum type { __VA_ARGS__ }; \
 	constexpr int ENUM_SIZE_OF_##type = CompilerGetEnumNamesNum(#__VA_ARGS__); \
 	constexpr char ENUM_ORIGIN_NAMES_OF_##type[] = #__VA_ARGS__; \
-	constexpr CompilerStrs<ENUM_SIZE_OF_##type> ENUM_NAMES_OF_##type = CompilerSplitEnumNames<ENUM_SIZE_OF_##type>(ENUM_ORIGIN_NAMES_OF_##type);
+	constexpr CompilerStrs<ENUM_SIZE_OF_##type> ENUM_NAMES_OF_##type = \
+	CompilerSplitEnumNames<ENUM_SIZE_OF_##type>(ENUM_ORIGIN_NAMES_OF_##type);

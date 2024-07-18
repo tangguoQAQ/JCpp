@@ -44,90 +44,6 @@ namespace Java
 	}
 
 	/**
-	 * @brief 调用类的静态方法。
-	 * @tparam R 方法的返回类型
-	 * @param methodName 方法名
-	 * @param signature 方法签名，如 "(Ljava/lang/String;)V"
-	 * @param ... 方法参数，可空。若使用错误的参数，JVM 可能会抛出 fatal error。
-	 * @return R
-	 * @throws Java::Exception::JniException
-	 */
-	template<typename R>
-	R JClass::Do(ConstString methodName, ConstString signature, ...) const noexcept(false)
-	{
-		using namespace Exception;
-
-		const auto methodID = env->GetStaticMethodID(*self, methodName, signature);
-		ThrowIf(methodID == nullptr, JniException(MethodNotFound, (name + "." + methodName + signature).c_str()));
-
-		va_list vaList;
-		va_start(vaList, signature);
-		if constexpr(std::is_void_v<R>)
-		{
-			env->CallStaticVoidMethodV(*self, methodID, vaList);
-			va_end(vaList);
-			ThrowIfChecked(Exception::CallMethodFailed);
-			return;
-		}
-		else if constexpr(std::is_same_v<R, JObject>)
-		{
-			::jobject result = env->CallStaticObjectMethodV(*self, methodID, vaList);
-			va_end(vaList);
-			ThrowIfChecked(Exception::CallMethodFailed);
-			return JObject(result);
-		}
-		else
-		{
-			R result;
-			if constexpr(std::is_same_v<R, ::jboolean>)
-				result = env->CallStaticBooleanMethodV(*self, methodID, vaList);
-
-			else if constexpr(std::is_same_v<R, ::jbyte>)
-				result = env->CallStaticByteMethodV(*self, methodID, vaList);
-
-			else if constexpr(std::is_same_v<R, ::jchar>)
-				result = env->CallStaticCharMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jshort>)
-				result = env->CallStaticShortMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jint>)
-				result = env->CallStaticIntMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jlong>)
-				result = env->CallStaticLongMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jfloat>)
-				result = env->CallStaticFloatMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jdouble>)
-				result = env->CallStaticDoubleMethodV(*self, methodID, vaList);
-			
-			else if constexpr(std::is_same_v<R, ::jstring>)
-				result = static_cast<::jstring>(env->CallStaticObjectMethodV(*self, methodID, vaList));
-			
-			else
-				Util::ThrowIf(true, "Unsupported template argument R type.")
-			
-			va_end(vaList);
-			ThrowIfChecked(Exception::CallMethodFailed);
-			return result;
-		}
-	}
-
-	template void JClass::Do(ConstString, ConstString, ...) const;
-	template ::jboolean JClass::Do(ConstString, ConstString, ...) const;
-	template ::jbyte JClass::Do(ConstString, ConstString, ...) const;
-	template ::jchar JClass::Do(ConstString, ConstString, ...) const;
-	template ::jshort JClass::Do(ConstString, ConstString, ...) const;
-	template ::jint JClass::Do(ConstString, ConstString, ...) const;
-	template ::jlong JClass::Do(ConstString, ConstString, ...) const;
-	template ::jfloat JClass::Do(ConstString, ConstString, ...) const;
-	template ::jdouble JClass::Do(ConstString, ConstString, ...) const;
-	template JObject JClass::Do(ConstString, ConstString, ...) const;
-	template ::jstring JClass::Do(ConstString, ConstString, ...) const;
-
-	/**
 	 * @brief 构造该类的实例。
 	 * @param signature 构造器方法签名
 	 * @param ... 构造器参数，可空。若使用错误的参数，JVM 可能会抛出 fatal error。
@@ -136,15 +52,15 @@ namespace Java
 	JObject JClass::New(ConstString signature, ...) const noexcept(false)
 	{
 		const auto methodID = env->GetMethodID(*self, "<init>", signature);
-		using namespace Exception;
-		ThrowIf(methodID == nullptr, JniException(MethodNotFound, (name + ".<init>" + signature).c_str()));
+		Exception::ThrowIf(methodID == nullptr, Exception::MethodNotFound,
+			LZSTR((name + ".<init>" + signature).c_str()));
 
 		va_list vaList;
 		va_start(vaList, signature);
 		::jobject pObject = env->NewObjectV(*self, methodID, vaList);
 		va_end(vaList);
-		ThrowIf(pObject == nullptr, Exception::NewObjectFailed);
+		Exception::ThrowIf(pObject == nullptr, Exception::NewObjectFailed);
 
-		return pObject;
+		return JObject(pObject);
 	}
 }

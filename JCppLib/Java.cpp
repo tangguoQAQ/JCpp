@@ -27,8 +27,8 @@ namespace Java {
 		vm_args.options = options;
 		vm_args.ignoreUnrecognized = false;
 
-		const jint rc = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args);
-		delete options;
+		const jint rc = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &vm_args);
+		delete[] options;
 		Util::ThrowIf(rc != JNI_OK, Exception::JniException("Failed to create Java VM"));
 	}
 
@@ -39,35 +39,50 @@ namespace Java {
 
 	namespace Exception
 	{
-		/**
-		 * @brief 每次调用完 JNI 接口后，都应该调用此函数来检查是否发生了异常。
-		 * @brief e.g. ThrowIfChecked(Exception::CallMethodFailed);
-		 */
-		void ThrowIfChecked(JniException e) noexcept(false)
+		void ThrowIfChecked(const EType& t, ConstString msg) noexcept(false)
 		{
-			auto exception = env->ExceptionOccurred();
-			if(exception == nullptr) return;
+			auto joE = env->ExceptionOccurred();
+			if(joE == nullptr) return;
 
-			auto jsExceptionMsg = static_cast<::jstring>(env->CallObjectMethod(exception,
-				env->GetMethodID(env->GetObjectClass(exception), "toString", "()Ljava/lang/String;")));
-			env->DeleteLocalRef(exception);
+			JniException e(t, msg);
+			auto jsEMsg = static_cast<::jstring>(env->CallObjectMethod(joE,
+				env->GetMethodID(env->GetObjectClass(joE), "toString", "()Ljava/lang/String;")));
+			env->DeleteLocalRef(joE);
 			env->ExceptionClear();
-			e.SetMsg(jsExceptionMsg);
-			env->DeleteLocalRef(jsExceptionMsg);
+			e.SetMsg(jsEMsg);
+			env->DeleteLocalRef(jsEMsg);
 			throw e;
 		}
 
-		/**
-		 * @brief 若 b 为真，则优先抛出 JNI 是否发生异常，若无抛出 e。
-		 * @brief e.g. ThrowIf(pLocalClass == nullptr, JniException(ClassNotFound, className));
-		 */
-		void ThrowIf(bool b, JniException e) noexcept(false)
+		void ThrowIfChecked(const EType& t, const LazyString&& msg) noexcept(false)
+		{
+			ThrowIfChecked(t, msg());
+		}
+
+		void ThrowIf(bool b, const EType& t, ConstString msg) noexcept(false)
 		{
 			if(!b) return;
 
-			ThrowIfChecked(e);
+			ThrowIfChecked(t, msg);
 			// 能运行到这里说明 ThrowIfChecked 没有抛出异常。
-			throw e;
+			throw JniException(t, msg);
+		}
+
+		void ThrowIf(bool b, const EType& t, const LazyString&& msg) noexcept(false)
+		{
+			if(!b) return;
+
+			ThrowIfChecked(t, std::move(msg));
+			// 能运行到这里说明 ThrowIfChecked 没有抛出异常。
+			throw JniException(t, msg());
+		}
+
+		void ThrowIf(bool b, const LazyString&& msg) noexcept(false) {
+			ThrowIf(b, Jni, std::move(msg));
+		}
+
+		void ThrowIf(bool b, ConstString msg) noexcept(false) {
+			ThrowIf(b, Jni, msg);
 		}
 
 		JniException::JniException(EType t, ConstString msg) : m_t(t), std::exception(msg)
@@ -86,7 +101,8 @@ namespace Java {
 		const char* JniException::what() const noexcept
 		{
 			static char szWhat[MAX_MSG_LEN];
-			::strncpy_s(szWhat, MAX_MSG_LEN, ENUM_NAMES_OF_EType.GetStr(static_cast<int>(m_t)).c_str(), MAX_MSG_LEN);
+			::strncpy_s(szWhat, MAX_MSG_LEN, ENUM_NAMES_OF_EType
+				.GetStr(static_cast<int>(m_t)).c_str(), MAX_MSG_LEN);
 			::strncat_s(szWhat, ": ", MAX_MSG_LEN);
 			::strncat_s(szWhat, szSelfMsg[0] == 0 ? std::exception::what() : szSelfMsg, MAX_MSG_LEN);
 
@@ -131,17 +147,15 @@ namespace Java {
 		if(classCache.find(className) != classCache.end())
 			return &(classCache[className]);
 
-		using namespace Exception;
-
 		char classpath[MAX_CLASSPATH_LEN];
 		::strncpy_s(classpath, MAX_CLASSPATH_LEN, className, MAX_CLASSPATH_LEN);
 		std::replace(classpath, classpath + strlen(classpath), '.', '/');
 		const auto pLocalClass = env->FindClass(classpath);
-		ThrowIf(pLocalClass == nullptr, JniException(ClassNotFound, className));
+		Exception::ThrowIf(pLocalClass == nullptr, Exception::ClassNotFound, LZSTR(className));
 
 		const auto pGlobalClass = static_cast<::jclass>(env->NewGlobalRef(pLocalClass));
 		env->DeleteLocalRef(pLocalClass);
-		ThrowIf(pGlobalClass == nullptr, "Failed to create global reference to class");
+		Exception::ThrowIf(pGlobalClass == nullptr, "Failed to create global reference to class");
 
 		classCache.insert({ className, std::shared_ptr<::jclass>(new jclass(pGlobalClass)) });
 		return &classCache[className];

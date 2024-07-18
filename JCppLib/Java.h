@@ -1,14 +1,17 @@
 #pragma once
 
+#include "UsingAlias.h"
+#define LZSTR(str) [&]() -> ConstString {return str;}
+
 constexpr size_t MAX_CLASSPATH_LEN = 256;
 
 #include <jni.h>
-#include "UsingAlias.h"
 #include "JClass.h"
 #include <memory>
 #include <unordered_map>
 #include <EnumHelper.h>
 #include "JObject.h"
+#include <functional>
 
 namespace Java {
 	extern JavaVM* jvm;
@@ -44,7 +47,7 @@ namespace Java {
 			constexpr static size_t MAX_MSG_LEN = 512;
 			char szSelfMsg[MAX_MSG_LEN];
 
-			friend void ThrowIfChecked(JniException e) noexcept(false);
+			friend void ThrowIfChecked(const EType& t, ConstString msg) noexcept(false);
 			void SetMsg(::jstring msg);
 		public:
 			JniException(EType t, ConstString msg);
@@ -54,17 +57,17 @@ namespace Java {
 			const char* what() const noexcept override;
 		};
 
-		/**
-		 * @brief 每次调用完 JNI 接口后，都应该调用此函数来检查是否发生了异常。
-		 * @brief e.g. ThrowIfChecked(Exception::CallMethodFailed);
-		 */
-		void ThrowIfChecked(JniException e) noexcept(false);
+		void ThrowIfChecked(const EType& t = Jni, ConstString msg = "") noexcept(false);
 
-		/**
-		 * @brief 若 b 为真，则优先抛出 JNI 是否发生异常，若无抛出 e。
-		 * @brief e.g. ThrowIf(pLocalClass == nullptr, JniException(ClassNotFound, className));
-		 */
-		void ThrowIf(bool b, JniException e) noexcept(false);
+		void ThrowIfChecked(const EType& t, const LazyString&& msg) noexcept(false);
+
+		void ThrowIf(bool b, const EType& t = Jni, ConstString msg = "") noexcept(false);
+
+		void ThrowIf(bool b, const EType& t, const LazyString&& msg) noexcept(false);
+
+		void ThrowIf(bool b, const LazyString&& msg) noexcept(false);
+
+		void ThrowIf(bool b, ConstString msg) noexcept(false);
 	}
 
 	/**

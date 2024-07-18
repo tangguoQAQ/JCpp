@@ -33,7 +33,6 @@ TEST_CASE("JObject 方法", "[jobject]")
 
 	SECTION("> 调用静态方法")
 	{
-		std::cout << joI.Class() << std::endl;
 		REQUIRE(joI.Class() == jcInteger);
 
 		auto joI1 = joI.Class().Do<JObject>("valueOf", "(I)Ljava/lang/Integer;", ::jint(37));

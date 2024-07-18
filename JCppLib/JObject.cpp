@@ -9,7 +9,7 @@ namespace Java
 	 */
 	JObject::JObject(::jobject pObject) noexcept(false)
 	{
-		Exception::ThrowIf(pObject == nullptr, { Exception::Jni, "pObject is null"});
+		Exception::ThrowIf(pObject == nullptr, Exception::Jni, "pObject is null");
 
 		const auto pGlobalObject = static_cast<::jobject>(env->NewGlobalRef(pObject));
 		env->DeleteLocalRef(pObject);
@@ -81,10 +81,9 @@ namespace Java
 	template<typename R>
 	R JObject::Do(ConstString methodName, ConstString signature, ...) const noexcept(false)
 	{
-		using namespace Java::Exception;
-
 		const auto methodID = env->GetMethodID(selfClass, methodName, signature);
-		ThrowIf(methodID == nullptr, JniException(MethodNotFound, (std::string(methodName) + signature).c_str()));
+		Exception::ThrowIf(methodID == nullptr, Exception::MethodNotFound,
+			LZSTR((std::string(methodName) + signature).c_str()));
 
 		va_list vaList;
 		va_start(vaList, signature);
@@ -173,7 +172,7 @@ namespace Java
 	std::string JString::Get() const noexcept(false)
 	{
 		const char* szStr = env->GetStringUTFChars(static_cast<::jstring>(self), nullptr);
-		Exception::ThrowIf(szStr == nullptr, { Exception::StringException , "GetStringUTFChars failed"});
+		Exception::ThrowIf(szStr == nullptr, Exception::StringException, "GetStringUTFChars failed");
 
 		std::string str(szStr);
 		env->ReleaseStringUTFChars(static_cast<::jstring>(self), szStr);

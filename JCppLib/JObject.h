@@ -22,7 +22,7 @@ namespace Java
 		/**
 		 * @param pObject 构造完成后将被释放，请使用 Ptr() 方法获取其指针。
 		 */
-		JObject(::jobject pObject) noexcept(false);
+		explicit JObject(::jobject pObject) noexcept(false);
 
 		~JObject() noexcept;
 
@@ -60,7 +60,7 @@ namespace Java
 
 		JString() noexcept(false);
 
-		JString(ConstString str) noexcept(false);
+		explicit JString(ConstString str) noexcept(false);
 
 		operator std::string() const noexcept(false);
 
