@@ -58,15 +58,11 @@ namespace Java {
 		};
 
 		void ThrowIfChecked(const EType& t = Jni, ConstString msg = "") noexcept(false);
-
-		void ThrowIfChecked(const EType& t, const LazyString&& msg) noexcept(false);
+		void ThrowIfChecked(const EType& t, const LazyString& msg) noexcept(false);
 
 		void ThrowIf(bool b, const EType& t = Jni, ConstString msg = "") noexcept(false);
-
-		void ThrowIf(bool b, const EType& t, const LazyString&& msg) noexcept(false);
-
-		void ThrowIf(bool b, const LazyString&& msg) noexcept(false);
-
+		void ThrowIf(bool b, const EType& t, const LazyString& msg) noexcept(false);
+		void ThrowIf(bool b, const LazyString& msg) noexcept(false);
 		void ThrowIf(bool b, ConstString msg) noexcept(false);
 	}
 

@@ -53,8 +53,7 @@ namespace Java {
 			env->DeleteLocalRef(jsEMsg);
 			throw e;
 		}
-
-		void ThrowIfChecked(const EType& t, const LazyString&& msg) noexcept(false)
+		void ThrowIfChecked(const EType& t, const LazyString& msg) noexcept(false)
 		{
 			ThrowIfChecked(t, msg());
 		}
@@ -67,21 +66,20 @@ namespace Java {
 			// 能运行到这里说明 ThrowIfChecked 没有抛出异常。
 			throw JniException(t, msg);
 		}
-
-		void ThrowIf(bool b, const EType& t, const LazyString&& msg) noexcept(false)
+		void ThrowIf(bool b, const EType& t, const LazyString& msg) noexcept(false)
 		{
 			if(!b) return;
 
-			ThrowIfChecked(t, std::move(msg));
+			ThrowIfChecked(t, msg);
 			// 能运行到这里说明 ThrowIfChecked 没有抛出异常。
 			throw JniException(t, msg());
 		}
-
-		void ThrowIf(bool b, const LazyString&& msg) noexcept(false) {
-			ThrowIf(b, Jni, std::move(msg));
+		void ThrowIf(bool b, const LazyString& msg) noexcept(false)
+		{
+			ThrowIf(b, Jni, msg);
 		}
-
-		void ThrowIf(bool b, ConstString msg) noexcept(false) {
+		void ThrowIf(bool b, ConstString msg) noexcept(false)
+		{
 			ThrowIf(b, Jni, msg);
 		}
 
