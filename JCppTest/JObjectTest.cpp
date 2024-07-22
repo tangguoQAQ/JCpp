@@ -1,6 +1,5 @@
 #include "catch2/catch_amalgamated.hpp"
 #include <Java.h>
-#include <iostream>
 
 using namespace Java;
 
@@ -35,14 +34,14 @@ TEST_CASE("JObject ·½·¨", "[jobject]")
 	{
 		REQUIRE(joI.Class() == jcInteger);
 
-		auto joI1 = joI.Class().Do<JObject>("valueOf", "(I)Ljava/lang/Integer;", ::jint(37));
-		auto joI2 = jcInteger.Do<JObject>("valueOf", "(I)Ljava/lang/Integer;", ::jint(37));
+		auto joI1 = joI.Class().Do(jcInteger, "valueOf", ::jint(37));
+		auto joI2 = jcInteger.Do(jcInteger, "valueOf", ::jint(37));
 		REQUIRE(joI1 == joI2);
 
-		auto joI3 = joI.Class().Do<JObject>("valueOf", "(I)Ljava/lang/Integer;", ::jint(2147483647));
-		auto joI4 = jcInteger.Do<JObject>("valueOf", "(I)Ljava/lang/Integer;", ::jint(2147483647));
+		auto joI3 = joI.Class().Do(jcInteger, "valueOf", ::jint(2147483647));
+		auto joI4 = jcInteger.Do(jcInteger, "valueOf", ::jint(2147483647));
 		REQUIRE(joI3 != joI4);
 
-		REQUIRE(joI.Class().Do<::jint>("parseInt", "(Ljava/lang/String;)I", JString("2147483647").Ptr()) == 2147483647);
+		REQUIRE(joI.Class().Do<::jint>("parseInt", JString("2147483647").Ptr()) == 2147483647);
 	}
 }

@@ -12,8 +12,11 @@ namespace Java
 	class JObject
 	{
 	private:
-		char szClassName[MAX_CLASSPATH_LEN];
+		char szClassName[MAX_CLASSPATH_LEN] = { 0 };
 		::jclass selfClass = nullptr;
+
+		friend class JClass;
+		JObject(const JClass& type, ::jobject pObject) noexcept(false);
 
 	protected:
 		::jobject self = nullptr;
@@ -39,8 +42,20 @@ namespace Java
 
 		ConstString ClassName() const noexcept;
 
+		template<typename R = JObject>
+		R&& Cast(const JClass& targetClass) noexcept(false)
+		{
+			if(self != nullptr) env->DeleteGlobalRef(self);
+			const auto pClass = targetClass.Ptr();
+			selfClass = static_cast<::jclass>(env->NewGlobalRef(pClass));
+			env->DeleteLocalRef(pClass);
+			ThrowIfChecked(Exception::Jni);
+			::strncpy(szClassName, targetClass.Name(), MAX_CLASSPATH_LEN);
+			return static_cast<R&&>(*this);
+		}
+
 		/**
-		* @brief 调用对象的方法。
+		 * @brief 调用对象的方法。
 		 * @tparam R 方法的返回类型
 		 * @param methodName 方法名
 		 * @param signature 方法签名，如 "(Ljava/lang/String;)V"
@@ -52,6 +67,11 @@ namespace Java
 		R Do(ConstString methodName, ConstString signature, ...) const noexcept(false);
 	};
 
+	template<typename R = JObject, typename T>
+	R&& JCast(T&& origin, const JClass& targetClass) noexcept(false)
+	{
+		return origin.Cast<R>(targetClass);
+	}
 
 	class JString : public JObject
 	{
@@ -71,4 +91,3 @@ namespace Java
 
 	std::ostream& operator<<(std::ostream& os, const JObject& jo);
 }
-

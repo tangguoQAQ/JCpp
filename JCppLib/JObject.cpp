@@ -4,6 +4,19 @@
 
 namespace Java
 {
+	JObject::JObject(const JClass& type, ::jobject pObject) noexcept(false)
+	{
+		Exception::ThrowIf(pObject == nullptr, Exception::Jni, "pObject is null");
+
+		const auto pGlobalObject = static_cast<::jobject>(env->NewGlobalRef(pObject));
+		env->DeleteLocalRef(pObject);
+		ThrowIfChecked(Exception::Jni);
+		self = pGlobalObject;
+
+		selfClass = type.Ptr();
+		::strncpy_s(szClassName, type.Name(), MAX_CLASSPATH_LEN);
+	}
+
 	/**
 	 * @param pObject 构造完成后将被释放，请使用 Ptr() 方法获取其指针。
 	 */
@@ -21,6 +34,7 @@ namespace Java
 		env->DeleteLocalRef(pClass);
 		ThrowIfChecked(Exception::Jni);
 
+		if(szClassName[0] != '\0') return;
 		::jobject pjoSelfClass = env->CallObjectMethod(self,
 			env->GetMethodID(selfClass, "getClass", "()Ljava/lang/Class;"));
 		::jclass pjcClass = env->GetObjectClass(pjoSelfClass);
@@ -83,7 +97,7 @@ namespace Java
 	{
 		const auto methodID = env->GetMethodID(selfClass, methodName, signature);
 		Exception::ThrowIf(methodID == nullptr, Exception::MethodNotFound,
-			LZSTR((std::string(methodName) + signature).c_str()));
+			LZSTR(std::string(methodName) + signature));
 
 		va_list vaList;
 		va_start(vaList, signature);

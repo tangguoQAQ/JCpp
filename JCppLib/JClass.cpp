@@ -1,12 +1,7 @@
 #pragma once
 
 #include "JClass.h"
-#include "Util.h"
-#include <cstdarg>
-#include <stdexcept>
 #include <memory>
-#include <algorithm>
-#include <type_traits>
 #include <iostream>
 
 namespace Java
@@ -43,24 +38,8 @@ namespace Java
 		return *self;
 	}
 
-	/**
-	 * @brief 构造该类的实例。
-	 * @param signature 构造器方法签名
-	 * @param ... 构造器参数，可空。若使用错误的参数，JVM 可能会抛出 fatal error。
-	 * @throws Java::Exception::JniException
-	 */
-	JObject JClass::New(ConstString signature, ...) const noexcept(false)
+	ConstString JClass::Name() const noexcept
 	{
-		const auto methodID = env->GetMethodID(*self, "<init>", signature);
-		Exception::ThrowIf(methodID == nullptr, Exception::MethodNotFound,
-			LZSTR((name + ".<init>" + signature).c_str()));
-
-		va_list vaList;
-		va_start(vaList, signature);
-		::jobject pObject = env->NewObjectV(*self, methodID, vaList);
-		va_end(vaList);
-		Exception::ThrowIf(pObject == nullptr, Exception::NewObjectFailed);
-
-		return JObject(pObject);
+		return name.c_str();
 	}
 }

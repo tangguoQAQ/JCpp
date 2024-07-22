@@ -1,7 +1,7 @@
 #pragma once
 
 #include "UsingAlias.h"
-#define LZSTR(str) [&]() -> ConstString {return str;}
+#define LZSTR(str) [&]() -> std::string {return (str);}
 
 constexpr size_t MAX_CLASSPATH_LEN = 256;
 
@@ -47,20 +47,19 @@ namespace Java {
 			constexpr static size_t MAX_MSG_LEN = 512;
 			char szSelfMsg[MAX_MSG_LEN];
 
-			friend void ThrowIfChecked(const EType& t, ConstString msg) noexcept(false);
+			friend void ThrowIfChecked(const EType& t, std::string msg) noexcept(false);
 			void SetMsg(::jstring msg);
 		public:
-			JniException(EType t, ConstString msg);
-			JniException(ConstString msg);
-			JniException(EType t);
+			JniException(EType t, std::string msg);
+			JniException(std::string msg);
 
 			const char* what() const noexcept override;
 		};
 
-		void ThrowIfChecked(const EType& t = Jni, ConstString msg = "") noexcept(false);
+		void ThrowIfChecked(const EType& t = EType::Jni, std::string msg = "") noexcept(false);
 		void ThrowIfChecked(const EType& t, const LazyString& msg) noexcept(false);
 
-		void ThrowIf(bool b, const EType& t = Jni, ConstString msg = "") noexcept(false);
+		void ThrowIf(bool b, const EType& t = EType::Jni, ConstString msg = "") noexcept(false);
 		void ThrowIf(bool b, const EType& t, const LazyString& msg) noexcept(false);
 		void ThrowIf(bool b, const LazyString& msg) noexcept(false);
 		void ThrowIf(bool b, ConstString msg) noexcept(false);
@@ -72,4 +71,47 @@ namespace Java {
 	 */
 	const std::shared_ptr<::jclass>* GetClassAndCache(ConstString className) noexcept(false);
 
+	template<typename T>
+	std::string GetTypeCode(T* arg = nullptr)
+	{
+		using T_ = std::remove_cv_t<T>;
+		if constexpr(std::is_same_v<T_, JClass> || std::is_base_of_v<JClass, T_> || std::is_same_v<T_, JObject> || std::is_base_of_v<JObject, T_>)
+		{
+			std::string name;
+			if constexpr(std::is_same_v<T_, JClass> || std::is_base_of_v<JClass, T_>) name = arg->Name();
+			else name = arg->ClassName();
+
+			std::replace(name.begin(), name.end(), '.', '/');
+			if(name.at(0) != '[')
+			{
+				name.insert(0, 1, 'L');
+				name.append(";");
+			}
+			return name;
+		}
+		else if constexpr(std::is_same_v<T_, void>) return "V";
+		else if constexpr(std::is_same_v<T_, ::jboolean>) return "Z";
+		else if constexpr(std::is_same_v<T_, ::jbyte>) return "B";
+		else if constexpr(std::is_same_v<T_, ::jchar>) return "C";
+		else if constexpr(std::is_same_v<T_, ::jshort>) return "S";
+		else if constexpr(std::is_same_v<T_, ::jint>) return "I";
+		else if constexpr(std::is_same_v<T_, ::jlong>) return "J";
+		else if constexpr(std::is_same_v<T_, ::jfloat>) return "F";
+		else if constexpr(std::is_same_v<T_, ::jdouble>) return "D";
+		// TODO: 支持数组类型。
+
+		Util::ThrowIf(true, "Unsupported template argument T type.");
+		return "";
+	}
+
+	template<typename T, typename R = std::conditional_t<std::is_same_v<T, JObject> || std::is_base_of_v<JObject, T>, ::jobject, T>>
+	R ToNative(T arg)
+	{
+		using T_ = std::remove_cv_t<T>;
+		if constexpr(std::is_same_v<T_, JObject> || std::is_base_of_v<JObject, T_>)
+		{
+			return arg.Ptr();
+		}
+		else return arg;
+	}
 }

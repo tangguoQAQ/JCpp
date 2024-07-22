@@ -39,16 +39,17 @@ namespace Java {
 
 	namespace Exception
 	{
-		void ThrowIfChecked(const EType& t, ConstString msg) noexcept(false)
+		void ThrowIfChecked(const EType& t, std::string msg) noexcept(false)
 		{
 			auto joE = env->ExceptionOccurred();
 			if(joE == nullptr) return;
+			env->ExceptionClear();
 
-			JniException e(t, msg);
+			env->CallVoidMethod(joE, env->GetMethodID(env->FindClass("java/lang/Throwable"), "printStackTrace", "()V"));
 			auto jsEMsg = static_cast<::jstring>(env->CallObjectMethod(joE,
 				env->GetMethodID(env->GetObjectClass(joE), "toString", "()Ljava/lang/String;")));
 			env->DeleteLocalRef(joE);
-			env->ExceptionClear();
+			JniException e(t, msg);
 			e.SetMsg(jsEMsg);
 			env->DeleteLocalRef(jsEMsg);
 			throw e;
@@ -83,12 +84,11 @@ namespace Java {
 			ThrowIf(b, Jni, msg);
 		}
 
-		JniException::JniException(EType t, ConstString msg) : m_t(t), std::exception(msg)
+		JniException::JniException(EType t, std::string msg) : m_t(t), std::exception(msg.c_str())
 		{
 			szSelfMsg[0] = 0;
 		}
-		JniException::JniException(ConstString msg) : JniException(Jni, msg) {}
-		JniException::JniException(EType t) : m_t(t) {}
+		JniException::JniException(std::string msg) : JniException(Jni, msg) {}
 
 		void JniException::SetMsg(::jstring msg)
 		{
@@ -149,7 +149,7 @@ namespace Java {
 		::strncpy_s(classpath, MAX_CLASSPATH_LEN, className, MAX_CLASSPATH_LEN);
 		std::replace(classpath, classpath + strlen(classpath), '.', '/');
 		const auto pLocalClass = env->FindClass(classpath);
-		Exception::ThrowIf(pLocalClass == nullptr, Exception::ClassNotFound, LZSTR(className));
+		Exception::ThrowIf(pLocalClass == nullptr, Exception::ClassNotFound, className);
 
 		const auto pGlobalClass = static_cast<::jclass>(env->NewGlobalRef(pLocalClass));
 		env->DeleteLocalRef(pLocalClass);
