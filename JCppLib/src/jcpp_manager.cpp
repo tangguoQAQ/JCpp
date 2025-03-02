@@ -3,15 +3,21 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include <jni_md.h>
 #include <jni.h>
 #include <memory>
 
+#include "jcpp_util.h"
+
 namespace jcpp
 {
 
 bool JCppManager::has_construct_args_ = false;
+const std::vector<std::string> JCppManager::DEFAULT_JVM_OPTIONS = {
+		"-Djava.class.path=.",
+		"-Djava.compiler=NONE"};
 
 static constexpr ::jint ToJniVersion(JCppManager::JniVersion version)
 {
@@ -62,28 +68,31 @@ void JCppManager::SetConstructArgs(JniVersion version, const std::vector<std::st
 
 void JCppManager::InitializeJvmOnce()
 {
-
+	std::call_once(jvm_init_flag_, [] { 
+		ConstructJvm();
+	});
 }
 
-std::pair<JavaVM*, JNIEnv*> JCppManager::ConstructJvm()
+void JCppManager::ConstructJvm()
 {
-	JavaVM* jvm = nullptr;
-	JNIEnv* env = nullptr;
+	::JavaVM* jvm = nullptr;
+	::JNIEnv* env = nullptr;
 
 	const ::jint rc = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), GetConstructArgs().get());
 	if (rc != JNI_OK)
 	{
-		throw std::runtime_error("Failed to create Java VM");
+		throw std::runtime_error("Failed to create Java VM" + rc);
 	}
 
-	return { jvm, env };
+	jvm_.reset(jvm);
+	jvm_env_.reset(env);
 }
 
 std::unique_ptr<::JavaVMInitArgs> JCppManager::GetConstructArgs()
 {
 	if(!has_construct_args_)
 	{
-		SetConstructArgs(JniVersion::JNI_1_8, { "-Djava.class.path=.", "-Djava.compiler=NONE" });
+		SetConstructArgs(JniVersion::JNI_1_8, JCppManager::DEFAULT_JVM_OPTIONS);
 	}
 
 	std::unique_ptr<::JavaVMInitArgs> result = std::make_unique<::JavaVMInitArgs>();

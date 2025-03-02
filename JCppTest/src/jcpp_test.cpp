@@ -1,4 +1,4 @@
-#include "catch2/catch_amalgamated.hpp"
+#include "../catch2/catch_amalgamated.hpp"
 
 int main(int argc, char* argv[])
 {

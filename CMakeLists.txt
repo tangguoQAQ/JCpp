@@ -17,7 +17,11 @@ if(NOT DEFINED ENV{JAVA_HOME})
 endif()
 
 include_directories("$ENV{JAVA_HOME}/include")
-include_directories("$ENV{JAVA_HOME}/include/win32")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  include_directories("$ENV{JAVA_HOME}/include/win32")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  include_directories("$ENV{JAVA_HOME}/include/linux")
+endif()
 include_directories("${PROJECT_SOURCE_DIR}/JCppLib/include")
 
 link_libraries("$ENV{JAVA_HOME}/lib/jvm.lib")
