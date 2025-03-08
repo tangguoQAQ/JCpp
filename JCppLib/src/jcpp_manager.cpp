@@ -3,7 +3,6 @@
 #include <utility>
 #include <vector>
 #include <string>
-#include <mutex>
 
 #include <jni_md.h>
 #include <jni.h>
@@ -14,10 +13,12 @@
 namespace jcpp
 {
 
-bool JCppManager::has_construct_args_ = false;
-const std::vector<std::string> JCppManager::DEFAULT_JVM_OPTIONS = {
-		"-Djava.class.path=.",
-		"-Djava.compiler=NONE"};
+std::unique_ptr<::JavaVM, JvmDeleter> JCppManager::jvm_{};
+std::unique_ptr<::JNIEnv, JvmEnvDeleter> JCppManager::jvm_env_{};
+
+JCppManager::JniVersion JCppManager::jni_version_ = JniVersion::JNI_1_8;
+const std::vector<std::string> JCppManager::DEFAULT_JVM_OPTIONS = { "-Djava.class.path=." };
+std::vector<std::string> JCppManager::jvm_options_ = DEFAULT_JVM_OPTIONS;
 
 static constexpr ::jint ToJniVersion(JCppManager::JniVersion version)
 {
@@ -60,17 +61,18 @@ static constexpr ::jint ToJniVersion(JCppManager::JniVersion version)
 
 void JCppManager::SetConstructArgs(JniVersion version, const std::vector<std::string>& options)
 {
-	has_construct_args_ = true;
-
 	jni_version_ = version;
 	jvm_options_ = options;
 }
 
+bool JCppManager::IsInitialized()
+{
+    return jvm_.get() != nullptr;
+}
+
 void JCppManager::InitializeJvmOnce()
 {
-	std::call_once(jvm_init_flag_, [] { 
-		ConstructJvm();
-	});
+	if(!jvm_) ConstructJvm();
 }
 
 void JCppManager::ConstructJvm()
@@ -78,11 +80,8 @@ void JCppManager::ConstructJvm()
 	::JavaVM* jvm = nullptr;
 	::JNIEnv* env = nullptr;
 
-	const ::jint rc = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), GetConstructArgs().get());
-	if (rc != JNI_OK)
-	{
-		throw std::runtime_error("Failed to create Java VM" + rc);
-	}
+	const auto rc = JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), GetConstructArgs().get());
+	util::ThrowIf(rc != JNI_OK, "Failed to construct Java VM", rc);
 
 	jvm_.reset(jvm);
 	jvm_env_.reset(env);
@@ -90,10 +89,6 @@ void JCppManager::ConstructJvm()
 
 std::unique_ptr<::JavaVMInitArgs> JCppManager::GetConstructArgs()
 {
-	if(!has_construct_args_)
-	{
-		SetConstructArgs(JniVersion::JNI_1_8, JCppManager::DEFAULT_JVM_OPTIONS);
-	}
 
 	std::unique_ptr<::JavaVMInitArgs> result = std::make_unique<::JavaVMInitArgs>();
 	const ::size_t option_size = jvm_options_.size();
@@ -109,6 +104,14 @@ std::unique_ptr<::JavaVMInitArgs> JCppManager::GetConstructArgs()
 	result->ignoreUnrecognized = false;
 
 	return result;
+}
+
+void JCppManager::DestroyJvmOnce()
+{
+	if(!jvm_) return;
+
+	jvm_.reset();	// may throw std::runtime_error
+	jvm_env_.reset();
 }
 
 }

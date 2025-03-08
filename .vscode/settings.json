@@ -61,5 +61,6 @@
         "typeinfo": "cpp",
         "variant": "cpp"
     },
-    "files.encoding": "gbk"
+    "files.encoding": "utf8",
+    "files.autoGuessEncoding": true
 }

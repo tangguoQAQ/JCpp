@@ -1,15 +1,19 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <utility>
 #include <string>
 #include <vector>
 
 #include <jni.h>
 
+#include "jcpp_util.h"
+
 namespace jcpp
 {
+
+struct JvmDeleter;
+struct JvmEnvDeleter;
 
 class JCppManager
 {
@@ -31,42 +35,53 @@ public:
 	};
 
 	/**
-	 * @brief ÉèÖÃ JVM µÄ¹¹Ôì²ÎÊı¡£
-	 * @param options È±Ê¡Îª `{ "-Djava.class.path=.", "-Djava.compiler=NONE" }`
+	 * @brief è®¾ç½® JVM çš„æ„é€ å‚æ•°ã€‚
+	 * @param options ç¼ºçœä¸º `{ "-Djava.class.path=.", "-Djava.compiler=NONE" }`
 	 */
 	static void SetConstructArgs(JniVersion version, const std::vector<std::string>& options = DEFAULT_JVM_OPTIONS);
 
-	static inline JniVersion GetJniVersion() {
+	static inline JniVersion GetJniVersion() noexcept {
 		return jni_version_;
 	}
 
-	static inline const std::vector<std::string>& GetJvmOptions() {
+	static inline const std::vector<std::string>& GetJvmOptions() noexcept {
 		return jvm_options_;
 	}
 
-
 	/**
-	 * @brief ÏÔÊ½³õÊ¼»¯ JCpp ¿â¡£
-	 * ½öÔÚÊ×´Îµ÷ÓÃ»òÏú»Ùºó³õÊ¼»¯Ò»´Î£¬¶à´Îµ÷ÓÃÎŞĞ§¡£
-	 * @note ÄãÒ»°ã²»ĞèÒªµ÷ÓÃ´Ëº¯Êı£¬JCpp »áÔÚºÏÊÊµÄÊ±ºò×Ô¶¯³õÊ¼»¯£¬³ı·ÇÄãÏ£ÍûÏÔÊ½¿ØÖÆ JVM µÄ³õÊ¼»¯¡£
-	 * @throw std::runtime_error JVM ¹¹ÔìÊ§°Ü¡£
+	 * @brief æ˜¾å¼åˆå§‹åŒ– JCpp åº“ã€‚
+	 * è¯·åœ¨ä¸»çº¿ç¨‹è°ƒç”¨ã€‚ä»…åœ¨é¦–æ¬¡è°ƒç”¨æˆ–é”€æ¯ååˆå§‹åŒ–ä¸€æ¬¡ï¼Œå¤šæ¬¡è°ƒç”¨æ— æ•ˆã€‚
+	 * @note ä½ ä¸€èˆ¬ä¸éœ€è¦è°ƒç”¨æ­¤å‡½æ•°ï¼ŒJCpp ä¼šåœ¨åˆé€‚çš„æ—¶å€™è‡ªåŠ¨åˆå§‹åŒ–ï¼Œé™¤éä½ å¸Œæœ›æ˜¾å¼æ§åˆ¶ JVM çš„åˆå§‹åŒ–ã€‚
+	 * @throw std::runtime_error JVM æ„é€ å¤±è´¥ã€‚
 	 */
-	static void InitializeExplicitly()
+	static inline void InitializeExplicitly() noexcept(false)
 	{
 	    InitializeJvmOnce();
 	}
 
+	static bool IsInitialized();
+
+	/**
+	 * @brief æ˜¾å¼é”€æ¯ JCpp åº“ã€‚
+	 * è¯·åœ¨ä¸»çº¿ç¨‹è°ƒç”¨ã€‚ä»…åœ¨ç¬¬ä¸€æ¬¡è°ƒç”¨æˆ–æ˜¾å¼åˆå§‹åŒ–åé”€æ¯ä¸€æ¬¡ï¼Œå¤šæ¬¡è°ƒç”¨æ— æ•ˆã€‚
+	 * @note ä½ ä¸€èˆ¬ä¸éœ€è¦è°ƒç”¨æ­¤å‡½æ•°ï¼ŒJCpp ä¼šåœ¨åˆé€‚çš„æ—¶å€™è‡ªåŠ¨é”€æ¯ï¼Œé™¤éä½ å¸Œæœ›æ˜¾å¼æ§åˆ¶ JVM çš„é”€æ¯ã€‚
+	 * @throw std::runtime_error JVM é”€æ¯å¤±è´¥ã€‚
+	 */
+	static inline void DestroyExplicitly() noexcept(false)
+	{
+		DestroyJvmOnce();
+	}
+
 private:
 	static std::unique_ptr<::JavaVM, JvmDeleter> jvm_;
-	static std::once_flag jvm_init_flag_;
-	static std::unique_ptr<::JNIEnv> jvm_env_;
+	static std::unique_ptr<::JNIEnv, JvmEnvDeleter> jvm_env_;
 
-	static bool has_construct_args_;
+	// Construct args
 	static JniVersion jni_version_;
 	static std::vector<std::string> jvm_options_;
 
 	/**
-	 * @brief ½öµÚÒ»´Îµ÷ÓÃÊ±³õÊ¼»¯ JVM¡£
+	 * @brief ä»…ç¬¬ä¸€æ¬¡è°ƒç”¨æ—¶åˆå§‹åŒ– JVMã€‚
 	 */
 	static void InitializeJvmOnce();
 
@@ -74,13 +89,24 @@ private:
 
 	static std::unique_ptr<::JavaVMInitArgs> GetConstructArgs();
 
+	static void DestroyJvmOnce();
+
 };
 
 struct JvmDeleter
 {
-	void operator()(JavaVM* p) const
+	void operator()(::JavaVM* p) const
 	{
-		p->DestroyJavaVM();
+		const auto rc = p->DestroyJavaVM();
+		util::ThrowIf(rc != JNI_OK, "Failed to destory Java VM", rc);
+	}
+};
+
+struct JvmEnvDeleter
+{
+	void operator()(::JNIEnv* p) const
+	{
+		return;	// do nothing
 	}
 };
 

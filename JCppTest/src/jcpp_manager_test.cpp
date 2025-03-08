@@ -1,9 +1,9 @@
 #include "../catch2/catch_amalgamated.hpp"
 #include <jcpp_manager.h>
 
-TEST_CASE("JcppManager ³õÊ¼»¯", "[jcpp_manager]")
+TEST_CASE("JcppManager åˆå§‹åŒ–", "[jcpp_manager]")
 {
-	SECTION("> ÉèÖÃ¹¹Ôì²ÎÊı")
+	SECTION("> è®¾ç½®æ„é€ å‚æ•°")
 	{
 		jcpp::JCppManager::SetConstructArgs(jcpp::JCppManager::JniVersion::JNI_10);
 
@@ -11,10 +11,35 @@ TEST_CASE("JcppManager ³õÊ¼»¯", "[jcpp_manager]")
 		REQUIRE(jcpp::JCppManager::GetJvmOptions() == jcpp::JCppManager::DEFAULT_JVM_OPTIONS);
 	}
 
-	SECTION("> ³õÊ¼»¯")
+	SECTION("> æ˜¾å¼åˆå§‹åŒ–")
 	{
-		jcpp::JCppManager::Initialize();
+		REQUIRE_NOTHROW(jcpp::JCppManager::InitializeExplicitly());
 
 		REQUIRE(jcpp::JCppManager::GetJvmOptions() == jcpp::JCppManager::DEFAULT_JVM_OPTIONS);
+		REQUIRE(jcpp::JCppManager::IsInitialized());
+	}
+
+	SECTION("> è¿‡å¤šåˆå§‹åŒ–")
+	{
+		REQUIRE_NOTHROW(jcpp::JCppManager::InitializeExplicitly());
+		
+		REQUIRE(jcpp::JCppManager::IsInitialized());
+	}
+}
+
+TEST_CASE("JcppManager é”€æ¯", "[jcpp_manager]")
+{
+	SECTION("> æ˜¾å¼é”€æ¯")
+	{
+		REQUIRE_NOTHROW(jcpp::JCppManager::DestroyExplicitly());
+
+		REQUIRE(!jcpp::JCppManager::IsInitialized());
+	}
+
+	SECTION("> è¿‡å¤šé”€æ¯")
+	{
+		REQUIRE_NOTHROW(jcpp::JCppManager::DestroyExplicitly());
+
+		REQUIRE(!jcpp::JCppManager::IsInitialized());
 	}
 }

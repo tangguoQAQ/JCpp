@@ -16,15 +16,22 @@ if(NOT DEFINED ENV{JAVA_HOME})
     message(FATAL_ERROR "JAVA_HOME environment variable is not set")
 endif()
 
-include_directories("$ENV{JAVA_HOME}/include")
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  include_directories("$ENV{JAVA_HOME}/include/win32")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  include_directories("$ENV{JAVA_HOME}/include/linux")
-endif()
-include_directories("${PROJECT_SOURCE_DIR}/JCppLib/include")
+# include_directories("$ENV{JAVA_HOME}/include")
+# if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#   include_directories("$ENV{JAVA_HOME}/include/win32")
+# elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#   include_directories("$ENV{JAVA_HOME}/include/linux")
+# endif()
+# include_directories("${PROJECT_SOURCE_DIR}/JCppLib/include")
 
-link_libraries("$ENV{JAVA_HOME}/lib/jvm.lib")
+# link_libraries("$ENV{JAVA_HOME}/lib/jvm.lib")
+
+find_package(JNI REQUIRED)  
+
+include_directories(${JNI_INCLUDE_DIRS})  
+link_libraries(${JNI_LIBRARIES})  
+
+enable_testing()
 
 # 包含子项目。
 add_subdirectory("JCppLib")
