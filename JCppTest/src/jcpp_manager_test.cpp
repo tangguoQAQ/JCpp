@@ -5,9 +5,9 @@ TEST_CASE("JcppManager 初始化", "[jcpp_manager]")
 {
 	SECTION("> 设置构造参数")
 	{
-		jcpp::JCppManager::SetConstructArgs(jcpp::JCppManager::JniVersion::JNI_10);
+		jcpp::JCppManager::SetConstructArgs(jcpp::jni_version::JNI_10);
 
-		REQUIRE(jcpp::JCppManager::GetJniVersion() == jcpp::JCppManager::JniVersion::JNI_10);
+		REQUIRE(jcpp::JCppManager::GetJniVersion() == jcpp::jni_version::JNI_10);
 		REQUIRE(jcpp::JCppManager::GetJvmOptions() == jcpp::JCppManager::DEFAULT_JVM_OPTIONS);
 	}
 

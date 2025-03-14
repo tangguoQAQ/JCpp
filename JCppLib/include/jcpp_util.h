@@ -6,6 +6,7 @@ namespace util
 {
 void ThrowIf(bool condition, const char* expection_message);
 
-void ThrowIf(bool condition, const char* expection_message, int error_code);
+void ThrowIf(int error_code, const char* expection_message);
+
 }
 }

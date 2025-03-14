@@ -1,0 +1,11 @@
+Checks: "
+    *,
+    -llvm-header-guard,
+    -llvmlibc-restrict-system-libc-headers,
+    -llvmlibc-implementation-in-namespace,
+    -llvmlibc-callee-namespace,
+    -fuchsia-*,
+    -modernize-use-trailing-return-type,
+    -cppcoreguidelines-pro-type-*-cast,
+    -llvm-include-order,
+    -google-readability-namespace-comments"

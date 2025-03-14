@@ -59,8 +59,10 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "pointers": "cpp"
     },
     "files.encoding": "utf8",
-    "files.autoGuessEncoding": true
+    "files.autoGuessEncoding": true,
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true
 }

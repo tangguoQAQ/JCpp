@@ -4,3 +4,4 @@ file(GLOB_RECURSE INCLUDE_FILES "include/*.h")
 add_library(JCppLib STATIC ${SRC_FILES} ${INCLUDE_FILES})
 
 target_include_directories(JCppLib PRIVATE "include/")
+target_include_directories(JCppLib PRIVATE "lib/")

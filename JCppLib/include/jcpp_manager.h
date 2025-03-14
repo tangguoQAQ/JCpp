@@ -12,6 +12,25 @@
 namespace jcpp
 {
 
+/**
+ * @brief 指示 JNI 版本号。
+ */
+namespace jni_version
+{
+	using jni_version_t = int;
+
+	constexpr jni_version_t JNI_1_1 = 0x00010001;
+	constexpr jni_version_t JNI_1_2 = 0x00010002;
+	constexpr jni_version_t JNI_1_4 = 0x00010004;
+	constexpr jni_version_t JNI_1_6 = 0x00010006;
+	constexpr jni_version_t JNI_1_8 = 0x00010008;
+	constexpr jni_version_t JNI_9 = 0x00090000;
+	constexpr jni_version_t JNI_10 = 0x000a0000;
+	constexpr jni_version_t JNI_19 = 0x00130000;
+	constexpr jni_version_t JNI_20 = 0x00140000;
+	constexpr jni_version_t JNI_21 = 0x00150000;
+}
+
 struct JvmDeleter;
 struct JvmEnvDeleter;
 
@@ -20,27 +39,14 @@ class JCppManager
 public:
 	static const std::vector<std::string> DEFAULT_JVM_OPTIONS;
 
-	enum class JniVersion
-	{
-		JNI_1_1,
-		JNI_1_2,
-		JNI_1_4,
-		JNI_1_6,
-		JNI_1_8,
-		JNI_9,
-		JNI_10,
-		JNI_19,
-		JNI_20,
-		JNI_21
-	};
-
 	/**
 	 * @brief 设置 JVM 的构造参数。
+	 * @param version 请使用 `jcpp::jni_version::JNI_*`。
 	 * @param options 缺省为 `{ "-Djava.class.path=.", "-Djava.compiler=NONE" }`
 	 */
-	static void SetConstructArgs(JniVersion version, const std::vector<std::string>& options = DEFAULT_JVM_OPTIONS);
+	static void SetConstructArgs(jni_version::jni_version_t version, const std::vector<std::string>& options = DEFAULT_JVM_OPTIONS);
 
-	static inline JniVersion GetJniVersion() noexcept {
+	static inline jni_version::jni_version_t GetJniVersion() noexcept {
 		return jni_version_;
 	}
 
@@ -77,7 +83,7 @@ private:
 	static std::unique_ptr<::JNIEnv, JvmEnvDeleter> jvm_env_;
 
 	// Construct args
-	static JniVersion jni_version_;
+	static jni_version::jni_version_t jni_version_;
 	static std::vector<std::string> jvm_options_;
 
 	/**
@@ -98,7 +104,7 @@ struct JvmDeleter
 	void operator()(::JavaVM* p) const
 	{
 		const auto rc = p->DestroyJavaVM();
-		util::ThrowIf(rc != JNI_OK, "Failed to destory Java VM", rc);
+		util::ThrowIf(rc, "Failed to destory Java VM");
 	}
 };
 
