@@ -8,6 +8,8 @@
 #include <jni.h>
 
 #include "jcpp_util.h"
+#include "jcpp_jclass_reference_cache.h"
+#include "jcpp_jni_exception.h"
 
 namespace jcpp
 {
@@ -34,10 +36,18 @@ namespace jni_version
 struct JvmDeleter;
 struct JvmEnvDeleter;
 
+/**
+ * @brief JCpp 库管理器。
+ */
 class JCppManager
 {
 public:
 	static const std::vector<std::string> DEFAULT_JVM_OPTIONS;
+
+	/// @warning 除非你清楚你在干什么，请不要直接使用此成员。
+	static std::unique_ptr<::JavaVM, JvmDeleter> jvm_;
+	/// @warning 除非你清楚你在干什么，请不要直接使用此成员。
+	static std::unique_ptr<::JNIEnv, JvmEnvDeleter> jvm_env_;
 
 	/**
 	 * @brief 设置 JVM 的构造参数。
@@ -67,6 +77,11 @@ public:
 
 	static bool IsInitialized();
 
+	static inline const JClassReferenceCache& GetJClassReferenceCache()
+	{
+	    return jclass_reference_cache_;
+	}
+
 	/**
 	 * @brief 显式销毁 JCpp 库。
 	 * 请在主线程调用。仅在第一次调用或显式初始化后销毁一次，多次调用无效。
@@ -79,12 +94,11 @@ public:
 	}
 
 private:
-	static std::unique_ptr<::JavaVM, JvmDeleter> jvm_;
-	static std::unique_ptr<::JNIEnv, JvmEnvDeleter> jvm_env_;
-
 	// Construct args
 	static jni_version::jni_version_t jni_version_;
 	static std::vector<std::string> jvm_options_;
+
+	static const JClassReferenceCache jclass_reference_cache_;
 
 	/**
 	 * @brief 仅第一次调用时初始化 JVM。

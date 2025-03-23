@@ -1,11 +1,15 @@
 Checks: "
     *,
     -llvm-header-guard,
+    -llvm-include-order,
     -llvmlibc-restrict-system-libc-headers,
     -llvmlibc-implementation-in-namespace,
     -llvmlibc-callee-namespace,
     -fuchsia-*,
     -modernize-use-trailing-return-type,
     -cppcoreguidelines-pro-type-*-cast,
-    -llvm-include-order,
-    -google-readability-namespace-comments"
+    -cppcoreguidelines-pro-type-vararg,
+    -cppcoreguidelines-pro-type-static-cast-downcast,
+    -google-readability-namespace-comments,
+    -clang-diagnostic-c++17-extensions,
+    -hicpp-vararg"

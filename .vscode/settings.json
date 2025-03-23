@@ -60,7 +60,9 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "pointers": "cpp"
+        "pointers": "cpp",
+        "span": "cpp",
+        "narrow": "cpp"
     },
     "files.encoding": "utf8",
     "files.autoGuessEncoding": true,

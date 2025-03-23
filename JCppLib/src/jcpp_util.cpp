@@ -5,9 +5,7 @@
 
 #include <jni.h>
 
-namespace jcpp
-{
-namespace util
+namespace jcpp::util
 {
 
 void ThrowIf(bool condition, char const* const expection_message)
@@ -24,5 +22,4 @@ void ThrowIf(int error_code, const char* expection_message)
     throw std::runtime_error(msg_stream.str());
 }
 
-}
 }

@@ -1,4 +1,5 @@
 #include "../catch2/catch_amalgamated.hpp"
+
 #include <jcpp_manager.h>
 
 TEST_CASE("JcppManager 初始化", "[jcpp_manager]")

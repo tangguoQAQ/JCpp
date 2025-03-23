@@ -21,6 +21,8 @@ int JCppManager::jni_version_ = jni_version::JNI_1_8;
 const std::vector<std::string> JCppManager::DEFAULT_JVM_OPTIONS{ "-Djava.class.path=." };
 std::vector<std::string> JCppManager::jvm_options_ = DEFAULT_JVM_OPTIONS;
 
+const JClassReferenceCache JCppManager::jclass_reference_cache_{};
+
 void JCppManager::SetConstructArgs(jni_version::jni_version_t version, const std::vector<std::string>& options)
 {
 	jni_version_ = version;

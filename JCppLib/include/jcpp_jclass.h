@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "jcpp_internal_macros.h"
-
 namespace jcpp
 {
 

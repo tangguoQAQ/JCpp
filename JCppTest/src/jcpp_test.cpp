@@ -7,11 +7,13 @@ int main(int argc, char* argv[])
 	session.configData().showSuccessfulTests = true;
 	session.configData().showDurations = Catch::ShowDurations::Always;
 
-	int cmdErrorCode = session.applyCommandLine(argc, argv);
-	if(cmdErrorCode) return cmdErrorCode;
+    int const cmdErrorCode = session.applyCommandLine(argc, argv);
+    if(cmdErrorCode != 0)
+	{
+		return cmdErrorCode;
+	}
 
-
-	int result = session.run(argc, argv);
+    int const result = session.run(argc, argv);
 
 	return result;
 }

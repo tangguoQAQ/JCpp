@@ -58,15 +58,6 @@
             }
         },
         {
-            "name": "test",
-            "description": "",
-            "displayName": "",
-            "inherits": [
-                "x64-debug",
-                "x64-release"
-            ]
-        },
-        {
             "name": "linux-base",
             "hidden": true,
             "binaryDir": "${sourceDir}/out/build/${presetName}",

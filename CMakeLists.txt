@@ -37,4 +37,4 @@ add_subdirectory("JCppLib")
 add_subdirectory("JCppTest")
 
 # 启用编译时 clang-tidy 检查。
-set(CMAKE_CXX_CLANG_TIDY "clang-tidy" "-checks=*" "-config-file=.clang-tidy")
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy" "-config-file=.clang-tidy")
